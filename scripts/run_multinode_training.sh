@@ -46,7 +46,7 @@ echo "本地排名: $LOCAL_RANK"
 echo "主节点地址: $MASTER_ADDR:$MASTER_PORT"
 
 # 设置数据路径
-DATA_DIR="/home/share/huadjyin/home/liwenbo/projects/geno/data/genomics_seq"
+DATA_DIR="datasets/genomics_seq"
 
 # 使用torchrun启动分布式训练
 echo "===== 开始分布式训练 ====="

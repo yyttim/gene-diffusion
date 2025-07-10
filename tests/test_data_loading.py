@@ -84,7 +84,7 @@ def test_data_paths():
     """测试数据路径"""
     print("=== 测试数据路径 ===")
     
-    data_dir = "/home/share/huadjyin/home/liwenbo/projects/geno/data/genomics_seq"
+    data_dir = "datasets/genomics_seq"
     annotation_dir = os.path.join(data_dir, "data_stage2")
     sequence_dir = os.path.join(data_dir, "data_stage3")
     

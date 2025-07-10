@@ -38,7 +38,7 @@ python -c "import torch; print(f'GPU数量: {torch.cuda.device_count()}')"
 nvidia-smi
 
 # 设置数据路径
-DATA_DIR="/home/share/huadjyin/home/liwenbo/projects/geno/data/genomics_seq"
+DATA_DIR="datasets/genomics_seq"
 
 # 开始训练（使用小型配置进行测试）
 echo "===== 开始训练 ====="

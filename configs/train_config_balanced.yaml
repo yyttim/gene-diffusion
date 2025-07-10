@@ -3,7 +3,7 @@
 
 # 数据配置
 data:
-  data_dir: "/home/share/huadjyin/home/liwenbo/projects/geno/data/genomics_seq"
+  data_dir: "datasets/genomics_seq"
   seq_length: 10000  # 10kb序列
   overlap: 0.8       # 80%重叠的滑动窗口
   

@@ -680,7 +680,7 @@ if __name__ == "__main__":
     # 测试数据处理
     import sys
     
-    data_dir = "/home/share/huadjyin/home/liwenbo/projects/geno/data/genomics_seq"
+    data_dir = "datasets/genomics_seq"
     
     # 测试tokenizer
     tokenizer = DNATokenizer()
