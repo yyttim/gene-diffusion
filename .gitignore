@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# PyTorch
+*.pth
+*.pt
+*.ckpt
+*.safetensors
+
+# Logs
+logs/
+*.log
+wandb/
+runs/
+outputs/
+
+# Data
+*.csv
+*.fasta
+*.fa
+*.fna
+*.faa
+*.gz
+*.zip
+*.tar
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.cache
+
+# Large files
+checkpoints/
+pretrained_models/
+data/ 

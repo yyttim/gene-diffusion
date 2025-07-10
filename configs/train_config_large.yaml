@@ -1,0 +1,88 @@
+# GeneDiffusion 大规模训练配置
+# 用于训练生物通用大模型（3M+ 数据）
+
+# 模型配置
+model:
+  vocab_size: 4099          # 4096个6-mer + 3个特殊token
+  num_annotation_types: 5   # 5种注释类型
+  num_species: 230          # 230个哺乳动物物种
+  d_model: 768             # 模型维度（类似BERT-base）
+  n_layers: 12             # Transformer层数
+  n_heads: 12              # 注意力头数
+  d_ff: 3072               # FFN维度
+  max_seq_len: 2048        # 最大序列长度（以6-mer计，对应12kb）
+  dropout: 0.1
+  use_dna_features: true
+
+# 数据配置
+data:
+  data_dir: "/home/share/huadjyin/home/liwenbo/projects/geno/data/genomics_seq"
+  seq_length: 10000        # 10kb序列片段
+  overlap: 0.8             # 80%重叠率
+  batch_size: 32           # 批次大小
+  num_workers: 8           # 数据加载进程数
+  use_cache: false         # 不缓存序列以节省内存
+  max_samples: null        # 使用所有数据（约297M）
+  max_samples_val: 10000   # 验证集大小
+
+# 训练配置
+training:
+  num_epochs: 10           # 训练轮数
+  val_interval: 5000       # 每5000步验证一次
+  save_interval: 10000     # 每10000步保存检查点
+  grad_clip: 1.0           # 梯度裁剪
+  
+  # Mask策略
+  min_mask_ratio: 0.15     # 最小mask比例
+  max_mask_ratio: 0.80     # 最大mask比例
+  mask_warmup_epochs: 2    # Mask比例预热轮数
+  
+  # 生物学约束
+  constraint_start_epoch: 3  # 从第3轮开始加入生物学约束
+  conservation_warmup_epochs: 5  # 进化保守性预热轮数
+  use_conservation_guidance: true
+  
+  # 损失权重
+  codon_loss_weight: 0.1   # 密码子完整性损失权重
+  gc_loss_weight: 0.1      # GC含量损失权重
+  pattern_loss_weight: 0.1 # 序列模式损失权重
+
+# 优化器配置
+optimizer:
+  lr: 1e-4                 # 学习率
+  beta1: 0.9
+  beta2: 0.999
+  eps: 1e-8
+  weight_decay: 0.01
+
+# 学习率调度器
+scheduler:
+  type: "cosine"
+  T_0: 10000               # 余弦退火周期
+  T_mult: 2                # 周期倍增因子
+  eta_min: 1e-6            # 最小学习率
+
+# 物种特定GC含量目标
+gc_targets:
+  homo_sapiens: 0.41       # 人类
+  mus_musculus: 0.42       # 小鼠
+  canis_lupus: 0.41        # 狗
+  bos_taurus: 0.42         # 牛
+  default: 0.45            # 默认值
+
+# 分布式训练
+distributed:
+  backend: "nccl"
+  init_method: "env://"
+
+# 其他配置
+output_dir: "./outputs/genediffusion_large"
+wandb_project: "genediffusion-large"
+experiment_name: "full_genome_10kb_3M"
+seed: 42
+
+# 硬件需求估算
+# - GPU内存: 建议 >= 40GB (A100)
+# - 系统内存: 建议 >= 128GB
+# - 存储: 建议 >= 4TB SSD
+# - 训练时间: 约2-3天/epoch (8×A100) 
