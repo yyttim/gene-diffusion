@@ -61,4 +61,5 @@ temp/
 # Large files
 checkpoints/
 pretrained_models/
-data/ 
+data/
+datasets/ 
