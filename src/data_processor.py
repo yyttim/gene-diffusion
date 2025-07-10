@@ -427,19 +427,19 @@ class GenomicDataset(Dataset):
                             })
                     
                     # 计算注释覆盖率
-                    annotation_coverage = self._calculate_annotation_coverage(
-                        fragment_annotations, self.seq_length
-                    )
+                        annotation_coverage = self._calculate_annotation_coverage(
+                            fragment_annotations, self.seq_length
+                        )
                     
-                    fragments.append({
-                        'species': species,
-                        'seq_id': seq_id,
-                        'start': start,
-                        'end': end,
-                        'annotations': fragment_annotations,
-                        'annotation_coverage': annotation_coverage,
-                        'seq_file': seq_file
-                    })
+                        fragments.append({
+                            'species': species,
+                            'seq_id': seq_id,
+                            'start': start,
+                            'end': end,
+                            'annotations': fragment_annotations,
+                            'annotation_coverage': annotation_coverage,
+                            'seq_file': seq_file
+                        })
                     total_fragments += 1
                 
                 processed_sequences += 1

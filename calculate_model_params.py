@@ -110,7 +110,7 @@ def main():
     configs = {
         'small': 'configs/train_config_small.yaml',
         'balanced': 'configs/train_config_balanced.yaml',
-        'large': 'configs/train_config_large.yaml'
+        '2b': 'configs/train_config_2b.yaml'
     }
     
     results = {}
