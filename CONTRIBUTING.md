@@ -6,7 +6,7 @@ We welcome contributions to GeneDiffusion! This document provides guidelines for
 
 ### Reporting Issues
 
-1. Check if the issue already exists in our [issue tracker](https://github.com/yourusername/gene-diffusion/issues)
+1. Check if the issue already exists in our [issue tracker](https://github.com/yyttim/gene-diffusion/issues)
 2. If not, create a new issue with:
    - Clear description of the problem
    - Steps to reproduce
@@ -51,7 +51,7 @@ pytest tests/test_masked_diffusion.py
 
 ```bash
 # Clone your fork
-git clone https://github.com/yourusername/gene-diffusion.git
+git clone https://github.com/yyttim/gene-diffusion.git
 cd gene-diffusion
 
 # Create development environment

@@ -25,7 +25,7 @@ GeneDiffusion is a state-of-the-art masked diffusion model designed for generati
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/gene-diffusion.git
+git clone https://github.com/yyttim/gene-diffusion.git
 cd gene-diffusion
 
 # Create conda environment
@@ -149,7 +149,7 @@ If you use GeneDiffusion in your research, please cite:
   title={GeneDiffusion: Masked Diffusion Model for Mammalian Genomic Sequences},
   author={Your Name},
   year={2024},
-  url={https://github.com/yourusername/gene-diffusion}
+  url={https://github.com/yyttim/gene-diffusion}
 }
 ```
 

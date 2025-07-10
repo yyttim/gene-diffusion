@@ -16,7 +16,7 @@ setup(
     description="Masked Diffusion Model for Mammalian Genomic Sequences",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yourusername/gene-diffusion",
+    url="https://github.com/yyttim/gene-diffusion",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
