@@ -1,5 +1,5 @@
 #!/bin/bash
-# 全量数据预处理脚本 - 后台运行版本
+# 全量数据预处理脚本
 
 # 项目路径
 PROJECT_DIR="/home/share/huadjyin/home/lishaoshuai/yyt/gene-diffusion"

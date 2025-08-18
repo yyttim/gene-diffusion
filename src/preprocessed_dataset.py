@@ -36,7 +36,7 @@ class PreprocessedDataset(Dataset):
         self.cache_in_memory = cache_in_memory
         
         # 加载物种映射
-        mapping_file = self.data_dir / "species_mapping.json"
+        mapping_file = self.data_dir / "species_id_mapping.json"
         with open(mapping_file, 'r') as f:
             mapping_data = json.load(f)
         
@@ -66,7 +66,7 @@ class PreprocessedDataset(Dataset):
                 num_samples = f.attrs['num_fragments']
                 
                 # 限制样本数
-                if max_samples_per_species is not None:
+                if max_samples_per_species is not None and max_samples_per_species > 0:
                     num_samples = min(num_samples, max_samples_per_species)
                 
                 # 添加到索引
@@ -82,7 +82,9 @@ class PreprocessedDataset(Dataset):
                 if cache_in_memory:
                     self._cache_species_data(species, h5_file, num_samples)
         
-        logger.info(f"加载了 {len(self.species_list)} 个物种的 {len(self.data_index)} 个样本")
+        # Only log on rank 0 (main process)
+        if int(os.environ.get('RANK', 0)) == 0:
+            logger.info(f"Loaded {len(self.species_list)} species, {len(self.data_index)} samples")
     
     def _cache_species_data(self, species: str, h5_file: Path, num_samples: int):
         """将物种数据缓存到内存"""
@@ -91,7 +93,9 @@ class PreprocessedDataset(Dataset):
                 'token_ids': f['token_ids'][:num_samples],
                 'annotations': f['annotations'][:num_samples]
             }
-        logger.info(f"缓存 {species} 的 {num_samples} 个样本到内存")
+        # Only log on rank 0
+        if int(os.environ.get('RANK', 0)) == 0:
+            logger.info(f"缓存 {species} 的 {num_samples} 个样本到内存")
     
     def __len__(self):
         return len(self.data_index)
@@ -149,8 +153,22 @@ def create_preprocessed_dataloader(
     cache_in_memory: bool = False,
     **kwargs
 ) -> DataLoader:
-    """创建预处理数据加载器"""
+    """
+    创建预处理数据加载器
     
+    Args:
+        data_dir: 预处理数据目录
+        batch_size: 批次大小
+        species_list: 要使用的物种列表
+        max_samples_per_species: 每个物种的最大样本数
+        shuffle: 是否打乱
+        num_workers: 数据加载线程数
+        cache_in_memory: 是否缓存到内存
+        **kwargs: 其他DataLoader参数
+    
+    Returns:
+        DataLoader实例
+    """
     dataset = PreprocessedDataset(
         data_dir=data_dir,
         species_list=species_list,
@@ -158,96 +176,95 @@ def create_preprocessed_dataloader(
         cache_in_memory=cache_in_memory
     )
     
-    # 定义collate函数来处理不同长度的序列
+    # 处理可变长度的collate函数
     def collate_fn(batch):
-        # 找到批次中的最大长度
+        # 获取最大长度
         max_len = max(item['input_ids'].size(0) for item in batch)
         
-        # 填充到相同长度
-        input_ids = []
-        annotations = []
-        species_ids = []
-        annotation_coverages = []
+        # 创建padded张量
+        batch_size = len(batch)
+        padded_input_ids = torch.zeros(batch_size, max_len, dtype=torch.long)
+        padded_annotations = torch.zeros(batch_size, max_len, dtype=torch.long)
+        species_ids = torch.zeros(batch_size, dtype=torch.long)
+        annotation_coverages = torch.zeros(batch_size, dtype=torch.float32)
         
-        for item in batch:
+        # 填充数据
+        for i, item in enumerate(batch):
             seq_len = item['input_ids'].size(0)
-            
-            # 填充
-            if seq_len < max_len:
-                padding = max_len - seq_len
-                item['input_ids'] = torch.cat([
-                    item['input_ids'],
-                    torch.zeros(padding, dtype=torch.long)
-                ])
-                item['annotations'] = torch.cat([
-                    item['annotations'],
-                    torch.zeros(padding, dtype=torch.long)
-                ])
-            
-            input_ids.append(item['input_ids'])
-            annotations.append(item['annotations'])
-            species_ids.append(item['species_id'])
-            annotation_coverages.append(item['annotation_coverage'])
+            padded_input_ids[i, :seq_len] = item['input_ids']
+            padded_annotations[i, :seq_len] = item['annotations']
+            species_ids[i] = item['species_id']
+            annotation_coverages[i] = item['annotation_coverage']
         
         return {
-            'input_ids': torch.stack(input_ids),
-            'annotations': torch.stack(annotations),
-            'species_ids': torch.stack(species_ids),
-            'annotation_coverage': torch.stack(annotation_coverages)
+            'input_ids': padded_input_ids,
+            'annotations': padded_annotations,
+            'species_ids': species_ids,
+            'annotation_coverage': annotation_coverages
         }
     
-    return DataLoader(
-        dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        num_workers=num_workers,
-        collate_fn=collate_fn,
-        pin_memory=True,
-        **kwargs
-    )
+    # 设置默认参数
+    dataloader_kwargs = {
+        'batch_size': batch_size,
+        'shuffle': shuffle,
+        'num_workers': num_workers,
+        'collate_fn': collate_fn,
+        'pin_memory': kwargs.get('pin_memory', True),
+        'persistent_workers': kwargs.get('persistent_workers', num_workers > 0),
+        'prefetch_factor': kwargs.get('prefetch_factor', 2),
+        'drop_last': kwargs.get('drop_last', True)
+    }
+    
+    # 更新用户提供的参数
+    dataloader_kwargs.update(kwargs)
+    
+    return DataLoader(dataset, **dataloader_kwargs)
 
 
 if __name__ == "__main__":
     # 测试预处理数据集
-    import time
+    import sys
+    from pathlib import Path
     
-    data_dir = "datasets/preprocessed"
+    # 添加项目根目录到路径
+    project_root = Path(__file__).parent.parent
+    sys.path.insert(0, str(project_root))
     
-    print("测试预处理数据集...")
+    # 测试加载
+    data_dir = project_root / "datasets" / "preprocessed"
     
-    # 创建数据集
-    dataset = PreprocessedDataset(
-        data_dir=data_dir,
-        species_list=['homo_sapiens', 'mus_musculus'],
-        max_samples_per_species=100,
-        cache_in_memory=True
-    )
-    
-    print(f"数据集大小: {len(dataset)}")
-    
-    # 测试加载速度
-    start_time = time.time()
-    for i in range(min(10, len(dataset))):
-        sample = dataset[i]
-        print(f"样本 {i}: input_ids形状={sample['input_ids'].shape}")
-    
-    elapsed = time.time() - start_time
-    print(f"加载10个样本耗时: {elapsed:.3f}秒")
-    
-    # 测试数据加载器
-    dataloader = create_preprocessed_dataloader(
-        data_dir=data_dir,
-        batch_size=4,
-        species_list=['homo_sapiens'],
-        max_samples_per_species=20,
-        shuffle=True,
-        num_workers=0
-    )
-    
-    print(f"\n数据加载器批次数: {len(dataloader)}")
-    
-    # 测试一个批次
-    batch = next(iter(dataloader))
-    print(f"批次数据形状:")
-    for key, value in batch.items():
-        print(f"  {key}: {value.shape}") 
+    if data_dir.exists():
+        print(f"测试加载预处理数据: {data_dir}")
+        
+        # 创建数据加载器
+        dataloader = create_preprocessed_dataloader(
+            data_dir=str(data_dir),
+            batch_size=4,
+            species_list=None,  # 使用所有物种
+            max_samples_per_species=10,  # 每个物种只加载10个样本用于测试
+            shuffle=True,
+            num_workers=2,
+            cache_in_memory=False
+        )
+        
+        print(f"数据集大小: {len(dataloader.dataset)}")
+        print(f"批次数: {len(dataloader)}")
+        
+        # 测试一个批次
+        for i, batch in enumerate(dataloader):
+            if i >= 1:  # 只测试1个批次
+                break
+            
+            print(f"\n批次 {i}:")
+            print(f"  input_ids shape: {batch['input_ids'].shape}")
+            print(f"  annotations shape: {batch['annotations'].shape}")
+            print(f"  species_ids shape: {batch['species_ids'].shape}")
+            print(f"  species_ids values: {batch['species_ids']}")
+            
+            # 显示第一个序列的前20个token
+            seq = batch['input_ids'][0]
+            ann = batch['annotations'][0]
+            print(f"  第一个序列前20个token: {seq[:20].tolist()}")
+            print(f"  对应注释: {ann[:20].tolist()}")
+    else:
+        print(f"预处理数据目录不存在: {data_dir}") 
