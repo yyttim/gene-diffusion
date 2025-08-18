@@ -52,17 +52,32 @@ else
     echo "Warning: module command not found, skipping module loading"
 fi
 
-# CUDA environment
-export CUDA_HOME=/soft/cuda/11.8
-if [ ! -d "$CUDA_HOME" ]; then
-    # Try alternative CUDA path
+# CUDA environment setup
+# First try to find CUDA installation
+if [ -d /soft/cuda/11.8 ]; then
+    export CUDA_HOME=/soft/cuda/11.8
+elif [ -d /usr/local/cuda-11.8 ]; then
     export CUDA_HOME=/usr/local/cuda-11.8
-    if [ ! -d "$CUDA_HOME" ]; then
-        export CUDA_HOME=/usr/local/cuda
-    fi
+elif [ -d /usr/local/cuda ]; then
+    export CUDA_HOME=/usr/local/cuda
+elif [ -d /opt/cuda ]; then
+    export CUDA_HOME=/opt/cuda
+else
+    echo "Warning: CUDA installation not found, trying default paths"
+    export CUDA_HOME=/usr/local/cuda
 fi
+
+# Set CUDA paths
 export PATH=$CUDA_HOME/bin:$PATH
 export LD_LIBRARY_PATH=$CUDA_HOME/lib64:$LD_LIBRARY_PATH
+
+# Add additional library paths for CUDA libraries
+export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/lib64:$LD_LIBRARY_PATH
+
+# Also add conda environment lib paths
+CONDA_ENV_PATH=/home/share/huadjyin/home/lishaoshuai/miniconda3/envs/gene-diffusion
+export LD_LIBRARY_PATH=$CONDA_ENV_PATH/lib:$LD_LIBRARY_PATH
 
 # NCCL settings
 export NCCL_DEBUG=WARN
@@ -94,6 +109,14 @@ source /home/share/huadjyin/home/lishaoshuai/miniconda3/bin/activate gene-diffus
 
 cd PROJECT_ROOT
 
+# Debug: Check CUDA libraries
+echo "Checking CUDA environment..."
+echo "CUDA_HOME: $CUDA_HOME"
+echo "LD_LIBRARY_PATH: $LD_LIBRARY_PATH"
+ls -la $CUDA_HOME/lib64/libcurand* 2>/dev/null || echo "libcurand not found in CUDA_HOME"
+which python
+python -c "import torch; print(f'PyTorch: {torch.__version__}, CUDA: {torch.cuda.is_available()}')" || echo "PyTorch test failed"
+
 # Distributed training
 export MASTER_ADDR=127.0.0.1
 export MASTER_PORT=29500
@@ -106,7 +129,7 @@ python -m torch.distributed.run \
     --master_port=$MASTER_PORT \
     src/train.py \
     --config CONFIG_FILE \
-    --output_dir OUTPUT_DIR 2>&1 | tee $LOG_FILE
+    --output_dir OUTPUT_DIR 2>&1 | tee LOG_FILE
 EOF
 
 # Replace placeholders
