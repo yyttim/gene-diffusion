@@ -1,0 +1,93 @@
+{
+  "experiment_name": "gene_diffusion_600m_efficient",
+  "wandb_project": "gene-diffusion",
+  "wandb_mode": "disabled",
+  "output_dir": "/home/share/huadjyin/home/lishaoshuai/yyt/gene-diffusion/test_output_20250819_125712",
+  "model": {
+    "vocab_size": 4099,
+    "num_annotation_types": 6,
+    "num_species": 228,
+    "d_model": 1024,
+    "n_layers": 24,
+    "n_heads": 16,
+    "d_ff": 4096,
+    "max_seq_len": 1024,
+    "dropout": 0.1,
+    "use_dna_features": true,
+    "use_rotary_pos": true,
+    "use_cross_attention": false,
+    "annotation_encoder_layers": 2,
+    "use_species_film": false,
+    "use_gradient_checkpointing": true
+  },
+  "data": {
+    "data_dir": "datasets/preprocessed",
+    "use_preprocessed": true,
+    "batch_size": 16,
+    "num_workers": 8,
+    "pin_memory": true,
+    "use_cache": false,
+    "max_samples": 100,
+    "max_samples_val": null,
+    "species_list": null,
+    "use_reverse_complement": false,
+    "use_shift_augmentation": false,
+    "prefetch_factor": 2,
+    "persistent_workers": true
+  },
+  "training": {
+    "num_epochs": 2,
+    "val_interval": 1,
+    "save_interval": 10,
+    "grad_clip": 0.5,
+    "gradient_accumulation_steps": 4,
+    "constraint_start_epoch": 999,
+    "use_conservation_guidance": false,
+    "use_amp": true,
+    "checkpoint_every_n_steps": 5000,
+    "keep_last_n_checkpoints": 3,
+    "memory_cleanup_interval": 100,
+    "compile_model": false
+  },
+  "optimizer": {
+    "lr": 0.0004,
+    "beta1": 0.9,
+    "beta2": 0.98,
+    "eps": "1e-8",
+    "weight_decay": 0.01,
+    "warmup_steps": 500,
+    "warmup_init_lr": "1e-5",
+    "base_lr": 0.0001,
+    "lr_scaling": "sqrt"
+  },
+  "scheduler": {
+    "type": "cosine_with_warmup",
+    "min_lr": "1e-5",
+    "num_cycles": 1,
+    "T_0": 10000
+  },
+  "codon_loss_weight": 0.0,
+  "gc_loss_weight": 0.0,
+  "pattern_loss_weight": 0.0,
+  "gc_targets": {
+    "homo_sapiens": 0.41,
+    "default": 0.42
+  },
+  "early_stopping": {
+    "patience": 15,
+    "min_delta": 0.001,
+    "monitor": "val_loss"
+  },
+  "generation": {
+    "eval_interval": 20,
+    "num_samples": 2,
+    "temperature": 0.8,
+    "top_k": 50,
+    "top_p": 0.95
+  },
+  "seed": 42,
+  "deterministic": false,
+  "debug": {
+    "max_steps": null
+  }
+}
